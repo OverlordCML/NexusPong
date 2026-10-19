@@ -1,0 +1,19 @@
+{
+  "name": "nexuspong",
+  "version": "1.0.0",
+  "description": "NexusPong — advanced real-time multiplayer HTML5 Pong with 1v1, 2v2, smash, power-ups, and authoritative netcode.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["pong", "multiplayer", "socket.io", "html5", "game"],
+  "author": "NexusPong",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}
