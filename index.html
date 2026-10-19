@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>NexusPong</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+</head>
+<body>
+  <div id="scanlines"></div>
+  <div id="app">
+
+    <!-- ===================== MENU ===================== -->
+    <section id="screen-menu" class="screen">
+      <div class="menu-bg-orb orb-a"></div>
+      <div class="menu-bg-orb orb-b"></div>
+      <div class="menu-inner">
+        <p class="eyebrow">1V1 VS BOT · ONLINE MULTIPLAYER</p>
+        <h1 class="logo">NEXUS<span>PONG</span></h1>
+        <p class="tagline">smash · power-ups · spin · rally bonus</p>
+
+        <div class="nick-row">
+          <label for="nick">CALLSIGN</label>
+          <input id="nick" type="text" maxlength="14" placeholder="Player" autocomplete="off" spellcheck="false" />
+        </div>
+
+        <div class="diff-row" id="diff-row">
+          <span class="diff-label">BOT</span>
+          <button class="diff-btn" data-diff="easy">EASY</button>
+          <button class="diff-btn active" data-diff="normal">NORMAL</button>
+          <button class="diff-btn" data-diff="hard">HARD</button>
+        </div>
+
+        <div class="menu-actions">
+          <button id="btn-vsbot" class="btn btn-primary">PLAY VS BOT</button>
+          <p class="or-split">ONLINE  —  NEEDS NODE SERVER</p>
+          <button id="btn-create" class="btn btn-ghost">CREATE ROOM</button>
+          <div class="join-row">
+            <input id="join-code" type="text" maxlength="6" placeholder="ROOM CODE" autocomplete="off" spellcheck="false" />
+            <button id="btn-join" class="btn btn-ghost">JOIN</button>
+          </div>
+        </div>
+
+        <p id="menu-error" class="error-msg"></p>
+        <p id="net-status" class="net-status">Checking server…</p>
+
+        <button id="btn-howto" class="btn-text">HOW TO PLAY</button>
+      </div>
+    </section>
+
+    <!-- ===================== HOW TO ===================== -->
+    <div id="howto-modal" class="modal hidden">
+      <div class="modal-card">
+        <button class="modal-close" id="howto-close" aria-label="Close">×</button>
+        <h2>HOW TO PLAY</h2>
+        <div class="howto-grid">
+          <div>
+            <h3>CONTROLS</h3>
+            <ul>
+              <li><b>Mouse</b> — paddle follows pointer (recommended)</li>
+              <li><b>W/S</b> or <b>↑/↓</b> — keyboard fallback</li>
+              <li><b>Hold Space / LMB</b> — charge smash, hit while charged</li>
+              <li><b>Esc</b> — pause vs-bot match</li>
+            </ul>
+            <h3>RULES</h3>
+            <ul>
+              <li>First to <b>11</b>, must win by 2</li>
+              <li>You are <b>cyan</b> (left). Bot / opponent is magenta.</li>
+              <li>Rally 12+ → scoring shot is worth <b>2 points</b></li>
+            </ul>
+          </div>
+          <div>
+            <h3>POWER-UPS</h3>
+            <ul class="pu-list">
+              <li>⚡ <b>Overdrive</b> — ball ×1.6 speed</li>
+              <li>📏 <b>Giant</b> — your paddle grows</li>
+              <li>🔻 <b>Shrink</b> — opponent shrinks</li>
+              <li>🌀 <b>Multi-Ball</b> — a second ball</li>
+              <li>👻 <b>Ghost</b> — ball goes translucent</li>
+              <li>🔄 <b>Reverse</b> — invert enemy controls</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== LOBBY ===================== -->
+    <section id="screen-lobby" class="screen hidden">
+      <div class="lobby-inner">
+        <p class="eyebrow">ROOM</p>
+        <div class="code-wrap">
+          <h2 id="lobby-code" class="room-code">------</h2>
+          <button id="btn-copy" class="btn btn-tiny" title="Copy code">COPY</button>
+        </div>
+        <p class="lobby-hint">Share this code. Host picks a mode, everyone readies up.</p>
+
+        <div class="mode-row" id="mode-row">
+          <span class="mode-label">MODE</span>
+          <button class="mode-btn active" data-mode="1v1" id="mode-1v1">1v1</button>
+          <button class="mode-btn" data-mode="2v2" id="mode-2v2">2v2</button>
+          <span id="host-badge" class="host-badge hidden">YOU ARE HOST</span>
+        </div>
+
+        <div id="team-board" class="team-board"></div>
+
+        <div class="lobby-actions">
+          <button id="btn-ready" class="btn btn-ghost">READY</button>
+          <button id="btn-start" class="btn btn-primary hidden">START MATCH</button>
+          <button id="btn-leave" class="btn btn-text">LEAVE ROOM</button>
+        </div>
+        <p id="lobby-error" class="error-msg"></p>
+      </div>
+    </section>
+
+    <!-- ===================== GAME ===================== -->
+    <section id="screen-game" class="screen hidden">
+      <div id="stage">
+        <canvas id="game-canvas" width="1000" height="600"></canvas>
+        <div id="hud">
+          <div class="hud-left">
+            <div class="score-block team-a">
+              <span class="score-tag" id="hud-name-a">CYAN</span>
+              <span class="score-num" id="score-a">0</span>
+            </div>
+          </div>
+          <div class="hud-center">
+            <div id="rally-pip">RALLY <span id="rally-num">0</span></div>
+            <div id="ping-pip">PING <span id="ping-num">—</span></div>
+          </div>
+          <div class="hud-right">
+            <div class="score-block team-b">
+              <span class="score-num" id="score-b">0</span>
+              <span class="score-tag" id="hud-name-b">MAGENTA</span>
+            </div>
+          </div>
+        </div>
+        <div id="effect-timers"></div>
+        <div id="smash-ui"></div>
+        <button id="btn-mute" class="mute-btn" title="Mute">🔊</button>
+        <button id="btn-forfeit" class="forfeit-btn hidden" title="Quit match">QUIT</button>
+        <div id="countdown-overlay" class="overlay hidden"><span id="countdown-num">3</span></div>
+        <div id="announce" class="announce"></div>
+        <div id="pause-overlay" class="overlay hidden">
+          <div class="pause-card">
+            <p id="pause-title">PAUSED</p>
+            <p id="pause-sub">Press Esc to resume</p>
+            <p id="pause-timer"></p>
+            <button id="btn-pause-quit" class="btn btn-ghost hidden">QUIT TO MENU</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== VICTORY ===================== -->
+    <section id="screen-victory" class="screen hidden">
+      <div class="menu-bg-orb orb-a"></div>
+      <div class="menu-inner">
+        <p class="eyebrow" id="victory-eyebrow">MATCH COMPLETE</p>
+        <h1 id="victory-title" class="logo victory-logo">VICTORY</h1>
+        <p id="victory-sub" class="tagline">Cyan wins 11 — 7</p>
+        <div class="final-score" id="final-score"></div>
+        <div class="menu-actions">
+          <button id="btn-rematch" class="btn btn-primary">REMATCH</button>
+          <button id="btn-lobby" class="btn btn-ghost">BACK TO MENU</button>
+        </div>
+        <p id="rematch-status" class="lobby-hint"></p>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    /* Socket.io is only present when this is served by node server.js.
+       Opening the file from disk skips it — vs-bot still works. */
+    (function () {
+      window.__npScriptsReady = false;
+      function load(src, ok, fail) {
+        var s = document.createElement("script");
+        s.src = src;
+        s.onload = ok;
+        s.onerror = fail || ok;
+        document.body.appendChild(s);
+      }
+      function bootGame() {
+        load("socket.js", function () {
+          load("local.js", function () {
+            load("client.js", function () { window.__npScriptsReady = true; });
+          });
+        });
+      }
+      if (location.protocol === "file:") {
+        bootGame();
+      } else {
+        load("/socket.io/socket.io.js", bootGame, bootGame);
+      }
+    })();
+  </script>
+</body>
+</html>
